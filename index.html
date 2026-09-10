@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>楊梅高中圖書館新生任務</title>
+  <style>
+    :root {
+      --ui-bg: #171b2e;
+      --ui-panel: #202746;
+      --ui-panel-2: #283153;
+      --ui-line: #3f4b78;
+      --ink: #f7f8ff;
+      --muted: #b9c1e4;
+      --gold: #ffd166;
+      --mint: #65d6ad;
+      --rose: #ff7a90;
+      --sky: #82c7ff;
+      --wood: #b98958;
+      --leaf: #4f8a3b;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0c1020;
+      color: var(--ink);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 40px 1fr 64px;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      background: #0b0f1f;
+    }
+
+    .topbar {
+      grid-column: 1 / 3;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 14px;
+      background: var(--ui-bg);
+      border-bottom: 1px solid #252b45;
+      font-size: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .mark {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #8fb8ff;
+      background: #243a68;
+      color: #ffffff;
+      font-size: 13px;
+      image-rendering: pixelated;
+      box-shadow: inset 0 0 0 2px #17264a;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 6px;
+      background: #252d4e;
+      border: 1px solid #3d4774;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .grow { flex: 1; }
+    .topbar button,
+    .bottom button,
+    .sidebar button,
+    .modal button {
+      border: 1px solid #4b5787;
+      background: #2a3357;
+      color: var(--ink);
+      border-radius: 6px;
+      min-height: 34px;
+      padding: 0 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .topbar button:hover,
+    .bottom button:hover,
+    .sidebar button:hover,
+    .modal button:hover { background: #36416c; }
+
+    .game-shell {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,.04) 25%, transparent 25% 75%, rgba(255,255,255,.04) 75%),
+        linear-gradient(45deg, rgba(255,255,255,.04) 25%, transparent 25% 75%, rgba(255,255,255,.04) 75%),
+        #28491f;
+      background-position: 0 0, 16px 16px;
+      background-size: 32px 32px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+
+    .welcome {
+      position: absolute;
+      top: 64px;
+      left: 32px;
+      width: min(390px, calc(100vw - 420px));
+      padding: 18px;
+      background: rgba(10, 12, 23, .82);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 8px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+    }
+
+    .welcome h1 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .welcome p { margin: 8px 0; color: var(--muted); line-height: 1.55; }
+    .welcome strong { color: var(--gold); }
+
+    .prompt {
+      position: absolute;
+      left: 50%;
+      bottom: 84px;
+      transform: translateX(-50%);
+      display: none;
+      max-width: min(720px, 80%);
+      padding: 10px 14px;
+      background: rgba(15, 18, 34, .9);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 8px;
+      color: #ffffff;
+      box-shadow: 0 12px 28px rgba(0,0,0,.28);
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .toast {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      width: min(420px, calc(100% - 40px));
+      display: grid;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      padding: 10px 12px;
+      background: rgba(23, 27, 46, .94);
+      border-left: 4px solid var(--mint);
+      border-radius: 6px;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,.26);
+      animation: slideIn .18s ease-out both;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sidebar {
+      grid-row: 2 / 4;
+      grid-column: 2;
+      min-width: 0;
+      background: var(--ui-panel);
+      border-left: 1px solid #343d66;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .side-head {
+      padding: 16px;
+      border-bottom: 1px solid #343d66;
+      display: grid;
+      gap: 12px;
+    }
+
+    .side-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 10px;
+    }
+
+    .side-title h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .search-box {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border: 1px solid #58649b;
+      border-radius: 8px;
+      color: var(--muted);
+      background: #1a203b;
+    }
+
+    .avatar-card {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: var(--ui-panel-2);
+      border-radius: 8px;
+      border: 1px solid #38436d;
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      position: relative;
+      background:
+        linear-gradient(#ffd3a5 0 0) 14px 8px / 18px 16px no-repeat,
+        linear-gradient(#263a72 0 0) 9px 22px / 28px 18px no-repeat,
+        linear-gradient(#11182f 0 0) 10px 4px / 26px 9px no-repeat,
+        linear-gradient(#11182f 0 0) 5px 12px / 36px 6px no-repeat,
+        #6da2ff;
+      border: 3px solid #d9e7ff;
+      border-radius: 50%;
+      image-rendering: pixelated;
+      box-shadow: 0 0 0 3px #151b32;
+    }
+
+    .avatar::after {
+      content: "";
+      position: absolute;
+      right: 1px;
+      bottom: 2px;
+      width: 10px;
+      height: 10px;
+      background: var(--mint);
+      border: 2px solid #15203b;
+      border-radius: 50%;
+    }
+
+    .meters {
+      padding: 12px 16px;
+      display: grid;
+      gap: 10px;
+      border-bottom: 1px solid #343d66;
+      background: #1c2240;
+    }
+
+    .meter-row {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr) 38px;
+      gap: 9px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .bar {
+      height: 10px;
+      background: #10152a;
+      border: 1px solid #38436d;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--mint), var(--sky));
+      transition: width .25s ease;
+    }
+
+    .tasks {
+      overflow: auto;
+      padding: 14px 16px 80px;
+    }
+
+    .section-label {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #d6dbff;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #1a2039;
+      border: 1px solid #303a63;
+      border-radius: 8px;
+    }
+
+    .task.done {
+      border-color: rgba(101, 214, 173, .7);
+      background: #172a34;
+    }
+
+    .task .check {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 2px solid #59669c;
+      color: transparent;
+      font-weight: 900;
+    }
+
+    .task.done .check {
+      border-color: var(--mint);
+      color: #0d1a17;
+      background: var(--mint);
+    }
+
+    .task h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    .task p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .log-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .bottom {
+      grid-column: 1;
+      background: var(--ui-bg);
+      border-top: 1px solid #252b45;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .tool {
+      min-width: 44px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #262f53;
+      border: 1px solid #3d4774;
+      color: #dce5ff;
+      font-size: 18px;
+      font-weight: 900;
+      user-select: none;
+    }
+
+    .tool.active {
+      background: #32635a;
+      border-color: var(--mint);
+    }
+
+    .mini-progress {
+      min-width: 210px;
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chat {
+      flex: 1;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 8px;
+      background: #0f1428;
+      border: 1px solid #323b64;
+      color: #d9e1ff;
+      font-size: 13px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(6, 8, 18, .62);
+      z-index: 20;
+      padding: 24px;
+    }
+
+    .modal {
+      width: min(720px, 94vw);
+      max-height: min(820px, 90vh);
+      overflow: auto;
+      background: #f8fbff;
+      color: #132037;
+      border: 3px solid #222b4b;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.45);
+    }
+
+    .modal header {
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #e8f0ff;
+      border-bottom: 1px solid #ccd8ef;
+      z-index: 1;
+    }
+
+    .modal h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .modal .content { padding: 16px; }
+    .modal p { line-height: 1.65; }
+    .modal .choices {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .modal .choices button {
+      justify-content: start;
+      min-height: 44px;
+      background: #edf3ff;
+      color: #132037;
+      border-color: #c3d0ea;
+      text-align: left;
+    }
+
+    .modal .choices button:hover { background: #dae7ff; }
+    .modal .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 16px 16px;
+    }
+
+    .modal .actions button.primary {
+      background: #234d80;
+      border-color: #234d80;
+      color: #ffffff;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      padding: 12px;
+      background: #edf3ff;
+      border: 1px solid #cbd8ef;
+      border-radius: 8px;
+    }
+
+    .stat b { display: block; font-size: 24px; }
+    .teacher-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .teacher-grid img {
+      width: 100%;
+      border: 1px solid #cad5eb;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .kbd {
+      display: inline-grid;
+      place-items: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      border: 1px solid #717da9;
+      border-bottom-width: 3px;
+      border-radius: 5px;
+      color: #ffffff;
+      background: #2a3357;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .dpad {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      display: none;
+      grid-template-columns: repeat(3, 48px);
+      grid-template-rows: repeat(3, 48px);
+      gap: 4px;
+      opacity: .92;
+    }
+
+    .dpad button {
+      border: 1px solid rgba(255,255,255,.24);
+      background: rgba(25,31,56,.72);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 900;
+    }
+
+    .dpad button:nth-child(1) { grid-column: 2; grid-row: 1; }
+    .dpad button:nth-child(2) { grid-column: 1; grid-row: 2; }
+    .dpad button:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .dpad button:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .dpad button:nth-child(5) { grid-column: 2; grid-row: 3; }
+
+    @media (max-width: 1020px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 40px minmax(0, 1fr) 210px 64px;
+      }
+      .topbar { grid-column: 1; }
+      .sidebar {
+        grid-row: 3;
+        grid-column: 1;
+        border-left: 0;
+        border-top: 1px solid #343d66;
+        grid-template-rows: auto auto minmax(0, 1fr);
+      }
+      .side-head { display: none; }
+      .tasks { padding-bottom: 14px; }
+      .bottom { grid-row: 4; }
+      .welcome { width: min(360px, calc(100vw - 32px)); left: 16px; top: 56px; }
+      .dpad { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand"><span class="mark">梅</span><span>楊梅高中圖書館新生任務</span></div>
+      <span class="status-pill" id="floorBadge">1F</span>
+      <span class="status-pill" id="timeBadge">00:00</span>
+      <span class="status-pill" id="nearBadge">大門</span>
+      <div class="grow"></div>
+      <button id="soundBtn" type="button">音效 開</button>
+      <button id="teacherBtn" type="button">教師模式</button>
+    </div>
+
+    <main class="game-shell" aria-label="楊梅高中圖書館互動式遊戲">
+      <canvas id="game" width="1120" height="720"></canvas>
+      <div class="welcome" id="welcome">
+        <h1>走進圖書館，完成新生第一天任務</h1>
+        <p>你是高一新生，剛到楊梅高中圖書館。從置物櫃開始，找書、借書、閱讀、使用設備，最後完成借還書流程。</p>
+        <p><strong>靠近發光區域互動</strong>，任務會記錄在右側面板。</p>
+      </div>
+      <div class="prompt" id="prompt"></div>
+      <div class="toast" id="toast"></div>
+      <div class="dpad" aria-label="觸控移動">
+        <button data-touch="up" type="button">上</button>
+        <button data-touch="left" type="button">左</button>
+        <button data-touch="interact" type="button">E</button>
+        <button data-touch="right" type="button">右</button>
+        <button data-touch="down" type="button">下</button>
+      </div>
+    </main>
+
+    <aside class="sidebar">
+      <div class="side-head">
+        <div class="side-title">
+          <h2>圖書館任務室</h2>
+          <span class="status-pill" id="completeBadge">0/7</span>
+        </div>
+        <div class="search-box"><span>查詢</span><strong id="searchTerm">尚未搜尋館藏</strong></div>
+        <div class="avatar-card">
+          <div class="avatar" aria-hidden="true"></div>
+          <div>
+            <strong>高一新生</strong><br>
+            <span style="color: var(--muted); font-size: 12px;">Available in library</span>
+          </div>
+        </div>
+      </div>
+      <div class="meters">
+        <div class="meter-row"><span>熟悉程度</span><div class="bar"><span id="familiarBar"></span></div><b id="familiarText">0%</b></div>
+        <div class="meter-row"><span>圖書館素養</span><div class="bar"><span id="etiquetteBar"></span></div><b id="etiquetteText">100</b></div>
+        <div class="meter-row"><span>探索區域</span><div class="bar"><span id="zoneBar"></span></div><b id="zoneText">0</b></div>
+      </div>
+      <div class="tasks">
+        <p class="section-label">主線任務</p>
+        <div id="taskList"></div>
+        <p class="section-label" style="margin-top: 18px;">學習紀錄</p>
+        <div class="log-list" id="logList"></div>
+      </div>
+    </aside>
+
+    <footer class="bottom">
+      <div class="tool active" title="移動">十</div>
+      <div class="tool" title="學生證">證</div>
+      <div class="tool" title="任務書">任</div>
+      <div class="mini-progress">
+        <span id="questLine">下一步：先到一樓置物櫃放置書包。</span>
+        <div class="bar"><span id="bottomProgress"></span></div>
+      </div>
+      <div class="chat" id="chat">圖書館員：歡迎來到楊梅高中圖書館，今天你會親手走完一次真正的使用流程。</div>
+      <button id="interactBtn" type="button">互動</button>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header>
+        <h2 id="modalTitle">互動</h2>
+        <button id="closeModal" type="button">關閉</button>
+      </header>
+      <div class="content" id="modalContent"></div>
+      <div class="actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <script>
+    const TILE = 32;
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const ui = {
+      floorBadge: document.getElementById("floorBadge"),
+      timeBadge: document.getElementById("timeBadge"),
+      nearBadge: document.getElementById("nearBadge"),
+      completeBadge: document.getElementById("completeBadge"),
+      prompt: document.getElementById("prompt"),
+      toast: document.getElementById("toast"),
+      taskList: document.getElementById("taskList"),
+      logList: document.getElementById("logList"),
+      familiarBar: document.getElementById("familiarBar"),
+      familiarText: document.getElementById("familiarText"),
+      etiquetteBar: document.getElementById("etiquetteBar"),
+      etiquetteText: document.getElementById("etiquetteText"),
+      zoneBar: document.getElementById("zoneBar"),
+      zoneText: document.getElementById("zoneText"),
+      questLine: document.getElementById("questLine"),
+      bottomProgress: document.getElementById("bottomProgress"),
+      chat: document.getElementById("chat"),
+      welcome: document.getElementById("welcome"),
+      searchTerm: document.getElementById("searchTerm")
+    };
+    const modal = {
+      backdrop: document.getElementById("modalBackdrop"),
+      title: document.getElementById("modalTitle"),
+      content: document.getElementById("modalContent"),
+      actions: document.getElementById("modalActions"),
+      close: document.getElementById("closeModal")
+    };
+
+    const tasks = [
+      ["locker", "置物入館", "到一樓置物櫃放置書包，帶學生證進館。"],
+      ["search", "查詢館藏", "在資訊檢索區查一本書，學會從網站找到館藏。"],
+      ["pickup", "前往書庫", "到二樓書架依分類找到書並取書。"],
+      ["borrow", "完成借書", "回一樓讀者服務櫃台出示學生證借書。"],
+      ["reading", "閱讀規範", "在期刊或漫畫情境中判斷哪些資料可外借。"],
+      ["machine", "使用事務機", "完成影印、列印、掃描費用與悠遊卡判斷。"],
+      ["return", "準時還書", "到櫃台還書，理解逾期會暫停借閱權。"]
+    ];
+
+    const zoneInfo = {
+      entrance: "大門",
+      locker: "置物櫃",
+      counter: "讀者服務櫃台",
+      search: "資訊檢索區",
+      magazines: "期刊區",
+      sdgs: "SDGs 專區",
+      exhibit: "展示螢幕",
+      meigao: "梅高特藏區",
+      discussion1: "討論室",
+      reading1: "一樓閱讀區",
+      machine: "事務機器",
+      newbooks: "新書展示區",
+      notice: "公布欄",
+      stairs1: "往 2F 樓梯",
+      stacks: "二樓書庫",
+      reading2: "二樓閱讀區",
+      discussion2: "二樓討論室",
+      screen2: "二樓螢幕",
+      storage: "儲物室",
+      stairs2: "往 1F 樓梯"
+    };
+
+    const maps = {
+      "1F": {
+        width: 54,
+        height: 34,
+        spawn: { x: 25, y: 31 },
+        rooms: [
+          { key: "discussion1", x: 1, y: 1, w: 28, h: 6, label: "討論室" },
+          { key: "sdgs", x: 6, y: 8, w: 23, h: 3, label: "SDGs 專區" },
+          { key: "reading1", x: 6, y: 13, w: 17, h: 6, label: "閱讀區" },
+          { key: "magazines", x: 6, y: 20, w: 17, h: 4, label: "雜誌區" },
+          { key: "newbooks", x: 13, y: 27, w: 12, h: 3, label: "新書展示" },
+          { key: "counter", x: 31, y: 20, w: 4, h: 10, label: "借還書櫃台" },
+          { key: "search", x: 36, y: 16, w: 18, h: 3, label: "資訊檢索區" },
+          { key: "office", x: 36, y: 20, w: 18, h: 10, label: "行政辦公室" },
+          { key: "exhibit", x: 36, y: 1, w: 11, h: 2, label: "展示螢幕" },
+          { key: "meigao", x: 48, y: 1, w: 5, h: 10, label: "梅高特藏" },
+          { key: "machine", x: 51, y: 12, w: 3, h: 4, label: "事務機器" },
+          { key: "notice", x: 4, y: 26, w: 9, h: 2, label: "公布欄" },
+          { key: "locker", x: 1, y: 27, w: 3, h: 6, label: "置物櫃" },
+          { key: "stairs1", x: 46, y: 31, w: 7, h: 2, label: "往2F樓梯" }
+        ],
+        obstacles: [
+          [1,1,28,6],[6,8,23,3],[6,13,17,2],[6,16,17,3],[6,20,17,1],[6,22,17,2],
+          [13,27,12,3],[31,20,4,10],[36,16,18,3],[36,20,18,10],[36,1,11,2],
+          [48,1,5,10],[51,12,3,4],[1,10,3,8],[1,19,3,7],[1,27,3,6]
+        ],
+        interactables: [
+          { id: "locker", x: 5, y: 30, r: 2.2, label: "置物櫃", action: "locker" },
+          { id: "search", x: 42, y: 15, r: 2.4, label: "資訊檢索電腦", action: "search" },
+          { id: "counterBorrow", x: 30, y: 24, r: 2.2, label: "讀者服務櫃台", action: "counter" },
+          { id: "magazines", x: 12, y: 19, r: 2.2, label: "期刊與漫畫規則", action: "reading" },
+          { id: "machine", x: 50, y: 14, r: 2.0, label: "影印列印掃描", action: "machine" },
+          { id: "return", x: 35, y: 26, r: 2.2, label: "還書櫃台", action: "return" },
+          { id: "meigao", x: 47, y: 6, r: 2.0, label: "梅高特藏區", action: "meigao" },
+          { id: "discussion1", x: 15, y: 7, r: 2.0, label: "討論室", action: "discussion" },
+          { id: "stairs1", x: 48, y: 30, r: 2.4, label: "前往二樓", action: "stairsUp" },
+          { id: "notice", x: 7, y: 25, r: 2.0, label: "公布欄", action: "notice" }
+        ]
+      },
+      "2F": {
+        width: 54,
+        height: 34,
+        spawn: { x: 47, y: 30 },
+        rooms: [
+          { key: "stacks", x: 6, y: 4, w: 42, h: 11, label: "書架" },
+          { key: "reading2", x: 6, y: 16, w: 40, h: 14, label: "閱讀區" },
+          { key: "discussion2", x: 1, y: 1, w: 3, h: 6, label: "討論室" },
+          { key: "discussion2", x: 50, y: 1, w: 3, h: 6, label: "討論室" },
+          { key: "screen2", x: 43, y: 19, w: 2, h: 8, label: "螢幕" },
+          { key: "storage", x: 50, y: 25, w: 3, h: 7, label: "儲物室" },
+          { key: "stairs2", x: 46, y: 25, w: 4, h: 7, label: "往1F樓梯" }
+        ],
+        obstacles: [
+          [6,4,4,10],[11,4,4,10],[16,4,4,10],[21,4,4,10],[26,4,4,10],[31,4,4,10],
+          [36,4,4,10],[41,4,4,10],[1,1,3,6],[50,1,3,6],[50,25,3,7],[43,19,2,8],
+          [7,17,16,4],[7,22,16,4],[26,17,16,4],[26,22,16,4],[7,27,16,3],[26,27,16,3]
+        ],
+        interactables: [
+          { id: "pickup", x: 13, y: 15, r: 2.4, label: "依分類號找書", action: "pickup" },
+          { id: "reading2", x: 24, y: 24, r: 2.6, label: "安靜閱讀", action: "quietRead" },
+          { id: "screen2", x: 42, y: 23, r: 2.0, label: "二樓螢幕", action: "screen2" },
+          { id: "discussion2", x: 49, y: 7, r: 2.0, label: "二樓討論室", action: "discussion" },
+          { id: "stairs2", x: 47, y: 30, r: 2.8, label: "回到一樓", action: "stairsDown" }
+        ]
+      }
+    };
+
+    const initialState = {
+      floor: "1F",
+      player: { x: 25, y: 31, dir: "down", step: 0 },
+      completed: {},
+      visited: {},
+      logs: [],
+      inventory: { bagStored: false, searched: false, book: false, borrowed: false },
+      etiquette: 100,
+      sound: true,
+      startedAt: Date.now(),
+      quiz: [],
+      lastEventAt: 0
+    };
+
+    let state = loadState();
+    let keys = new Set();
+    let near = null;
+    let last = performance.now();
+    let audioCtx = null;
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("ymhsLibraryGame") || "null");
+        if (saved && saved.player && saved.completed) return saved;
+      } catch (error) {}
+      return structuredClone(initialState);
+    }
+
+    function saveState() {
+      localStorage.setItem("ymhsLibraryGame", JSON.stringify(state));
+    }
+
+    function playTone(freq = 640, duration = 0.08, type = "square") {
+      if (!state.sound) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function toast(message, tone = "ok") {
+      const item = document.createElement("div");
+      item.className = "toast-item";
+      item.style.borderLeftColor = tone === "warn" ? "var(--rose)" : tone === "gold" ? "var(--gold)" : "var(--mint)";
+      item.textContent = message;
+      ui.toast.prepend(item);
+      setTimeout(() => item.remove(), 4200);
+    }
+
+    function addLog(message) {
+      const stamp = formatTime(Date.now() - state.startedAt);
+      state.logs.unshift({ time: stamp, message });
+      state.logs = state.logs.slice(0, 24);
+      saveState();
+      renderUI();
+    }
+
+    function completeTask(id, message) {
+      if (!state.completed[id]) {
+        state.completed[id] = true;
+        addLog(message);
+        toast(message, "ok");
+        playTone(820, 0.12, "triangle");
+      }
+    }
+
+    function formatTime(ms) {
+      const sec = Math.floor(ms / 1000);
+      const m = String(Math.floor(sec / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    function rectContains(rect, x, y, pad = 0) {
+      return x >= rect.x - pad && x <= rect.x + rect.w + pad && y >= rect.y - pad && y <= rect.y + rect.h + pad;
+    }
+
+    function isBlocked(x, y) {
+      if (x < 0.8 || y < 0.8 || x > maps[state.floor].width - 0.8 || y > maps[state.floor].height - 0.8) return true;
+      return maps[state.floor].obstacles.some(([ox, oy, ow, oh]) => x >= ox - .1 && x <= ox + ow + .1 && y >= oy - .1 && y <= oy + oh + .1);
+    }
+
+    function update(dt) {
+      let dx = 0;
+      let dy = 0;
+      if (keys.has("ArrowUp") || keys.has("KeyW")) dy -= 1;
+      if (keys.has("ArrowDown") || keys.has("KeyS")) dy += 1;
+      if (keys.has("ArrowLeft") || keys.has("KeyA")) dx -= 1;
+      if (keys.has("ArrowRight") || keys.has("KeyD")) dx += 1;
+      const moving = dx !== 0 || dy !== 0;
+      if (moving) {
+        const length = Math.hypot(dx, dy);
+        dx /= length;
+        dy /= length;
+        const running = keys.has("ShiftLeft") || keys.has("ShiftRight");
+        const speed = running ? 5.8 : 3.5;
+        const nx = state.player.x + dx * speed * dt;
+        const ny = state.player.y + dy * speed * dt;
+        if (!isBlocked(nx, state.player.y)) state.player.x = nx;
+        if (!isBlocked(state.player.x, ny)) state.player.y = ny;
+        state.player.step += dt * (running ? 12 : 7);
+        if (Math.abs(dx) > Math.abs(dy)) state.player.dir = dx > 0 ? "right" : "left";
+        else state.player.dir = dy > 0 ? "down" : "up";
+        if (running && performance.now() - state.lastEventAt > 5500) {
+          state.etiquette = Math.max(0, state.etiquette - 3);
+          state.lastEventAt = performance.now();
+          toast("圖書館員提醒：館內請慢慢走，避免奔跑影響他人。", "warn");
+          addLog("情境事件：奔跑提醒，素養分數 -3。");
+        }
+      }
+      updateNear();
+      visitZones();
+      draw();
+    }
+
+    function updateNear() {
+      const list = maps[state.floor].interactables;
+      near = null;
+      let min = Infinity;
+      for (const item of list) {
+        const d = Math.hypot(state.player.x - item.x, state.player.y - item.y);
+        if (d < item.r && d < min) {
+          min = d;
+          near = item;
+        }
+      }
+      if (near) {
+        ui.prompt.style.display = "block";
+        ui.prompt.textContent = `靠近 ${near.label}`;
+        ui.nearBadge.textContent = near.label;
+      } else {
+        ui.prompt.style.display = "none";
+        const room = maps[state.floor].rooms.find(r => rectContains(r, state.player.x, state.player.y, .4));
+        ui.nearBadge.textContent = room ? room.label : "走廊";
+      }
+    }
+
+    function visitZones() {
+      for (const room of maps[state.floor].rooms) {
+        if (rectContains(room, state.player.x, state.player.y, .2)) {
+          state.visited[`${state.floor}-${room.key}`] = true;
+        }
+      }
+    }
+
+    function worldToScreen(x, y, cam) {
+      return { x: x * TILE - cam.x, y: y * TILE - cam.y };
+    }
+
+    function draw() {
+      const map = maps[state.floor];
+      const cam = camera();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawOutside(cam, map);
+      drawMapBase(cam, map);
+      drawRooms(cam, map);
+      drawFurniture(cam);
+      drawInteractables(cam);
+      drawPlayer(cam);
+      drawMinimap(map);
+    }
+
+    function camera() {
+      const map = maps[state.floor];
+      const maxX = map.width * TILE - canvas.width;
+      const maxY = map.height * TILE - canvas.height;
+      return {
+        x: Math.max(0, Math.min(maxX, state.player.x * TILE - canvas.width / 2)),
+        y: Math.max(0, Math.min(maxY, state.player.y * TILE - canvas.height / 2))
+      };
+    }
+
+    function drawOutside(cam, map) {
+      ctx.fillStyle = "#315922";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let x = -cam.x % 32; x < canvas.width; x += 32) {
+        for (let y = -cam.y % 32; y < canvas.height; y += 32) {
+          ctx.fillStyle = (Math.floor((x + cam.x) / 32 + (y + cam.y) / 32) % 2) ? "#37652a" : "#2f5823";
+          ctx.fillRect(x, y, 32, 32);
+        }
+      }
+      ctx.fillStyle = "#29313b";
+      ctx.fillRect(24 * TILE - cam.x, map.height * TILE - cam.y, 7 * TILE, 160);
+      ctx.fillStyle = "#59636d";
+      ctx.fillRect(24 * TILE - cam.x + 12, map.height * TILE - cam.y, 4, 160);
+      ctx.fillRect(30 * TILE - cam.x, map.height * TILE - cam.y, 4, 160);
+    }
+
+    function drawMapBase(cam, map) {
+      const sx = -cam.x;
+      const sy = -cam.y;
+      ctx.fillStyle = "#11182b";
+      ctx.fillRect(sx, sy, map.width * TILE, map.height * TILE);
+      ctx.fillStyle = "#b88b5b";
+      ctx.fillRect(sx + TILE, sy + TILE, (map.width - 2) * TILE, (map.height - 2) * TILE);
+      for (let x = 1; x < map.width - 1; x++) {
+        for (let y = 1; y < map.height - 1; y++) {
+          ctx.fillStyle = (x + y) % 2 === 0 ? "#bd9161" : "#b68957";
+          ctx.fillRect(sx + x * TILE, sy + y * TILE, TILE, TILE);
+        }
+      }
+      ctx.strokeStyle = "#7b5a38";
+      ctx.lineWidth = 1;
+      for (let x = 1; x < map.width; x++) {
+        ctx.beginPath();
+        ctx.moveTo(sx + x * TILE, sy + TILE);
+        ctx.lineTo(sx + x * TILE, sy + (map.height - 1) * TILE);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "#18233d";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(sx + 8, sy + 8, map.width * TILE - 16, map.height * TILE - 16);
+      ctx.fillStyle = "#203555";
+      ctx.fillRect(sx + 24 * TILE, sy + (map.height - 1) * TILE, 7 * TILE, TILE);
+      ctx.fillStyle = "#e6eef8";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText(state.floor === "1F" ? "大門" : "樓梯口", sx + 25 * TILE, sy + (map.height - 1.25) * TILE);
+    }
+
+    function drawRooms(cam, map) {
+      for (const room of map.rooms) {
+        const p = worldToScreen(room.x, room.y, cam);
+        let fill = "#d9e8f3";
+        if (room.key.includes("reading")) fill = "#dfeaf2";
+        if (room.key === "stacks") fill = "#d7e7f4";
+        if (room.key === "office") fill = "#cfdfec";
+        if (room.key === "sdgs") fill = "#d6ead9";
+        if (room.key === "meigao") fill = "#e6dbef";
+        ctx.fillStyle = fill;
+        ctx.fillRect(p.x, p.y, room.w * TILE, room.h * TILE);
+        ctx.strokeStyle = "#132b3d";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(p.x, p.y, room.w * TILE, room.h * TILE);
+        ctx.fillStyle = "#111827";
+        ctx.font = "bold 18px 'Microsoft JhengHei', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(room.label, p.x + room.w * TILE / 2, p.y + room.h * TILE / 2 + 6);
+        ctx.textAlign = "left";
+      }
+    }
+
+    function drawFurniture(cam) {
+      const drawShelf = (x, y, w, h) => {
+        const p = worldToScreen(x, y, cam);
+        ctx.fillStyle = "#8db6dc";
+        ctx.fillRect(p.x, p.y, w * TILE, h * TILE);
+        ctx.fillStyle = "#6a8eb5";
+        for (let i = 0; i < w; i++) {
+          ctx.fillRect(p.x + i * TILE + 8, p.y + 8, 7, h * TILE - 16);
+          ctx.fillRect(p.x + i * TILE + 18, p.y + 8, 7, h * TILE - 16);
+        }
+        ctx.strokeStyle = "#4a6d91";
+        ctx.strokeRect(p.x, p.y, w * TILE, h * TILE);
+      };
+      const drawTable = (x, y, w, h) => {
+        const p = worldToScreen(x, y, cam);
+        ctx.fillStyle = "#9c6b45";
+        ctx.fillRect(p.x, p.y, w * TILE, h * TILE);
+        ctx.fillStyle = "#6e452e";
+        ctx.fillRect(p.x + 6, p.y + 6, w * TILE - 12, h * TILE - 12);
+        ctx.strokeStyle = "#513420";
+        ctx.strokeRect(p.x, p.y, w * TILE, h * TILE);
+      };
+      const drawComputer = (x, y) => {
+        const p = worldToScreen(x, y, cam);
+        ctx.fillStyle = "#9fc9ec";
+        ctx.fillRect(p.x, p.y, 26, 18);
+        ctx.fillStyle = "#183553";
+        ctx.fillRect(p.x + 4, p.y + 4, 18, 10);
+        ctx.fillStyle = "#5e6a78";
+        ctx.fillRect(p.x + 9, p.y + 18, 8, 8);
+      };
+
+      if (state.floor === "1F") {
+        drawTable(7, 14, 7, 2);
+        drawTable(7, 17, 7, 2);
+        drawTable(7, 21, 16, 1);
+        drawTable(7, 23, 16, 1);
+        drawTable(14, 28, 10, 1);
+        drawShelf(37, 16, 3, 2);
+        for (let i = 0; i < 6; i++) drawComputer(36 + i * 3, 17);
+        for (let i = 0; i < 6; i++) drawShelf(37 + i * 2, 4, 1, 4);
+        drawTable(39, 8, 5, 2);
+      } else {
+        for (let i = 0; i < 9; i++) drawShelf(7 + i * 5, 5, 3, 9);
+        drawTable(8, 18, 15, 2);
+        drawTable(8, 23, 15, 2);
+        drawTable(27, 18, 15, 2);
+        drawTable(27, 23, 15, 2);
+        drawTable(8, 28, 15, 1);
+        drawTable(27, 28, 15, 1);
+      }
+    }
+
+    function drawInteractables(cam) {
+      const time = performance.now() / 500;
+      for (const item of maps[state.floor].interactables) {
+        const p = worldToScreen(item.x, item.y, cam);
+        const pulse = 3 + Math.sin(time) * 2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 14 + pulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 209, 102, .18)";
+        ctx.fill();
+        ctx.strokeStyle = item === near ? "#ffd166" : "rgba(255, 209, 102, .55)";
+        ctx.lineWidth = item === near ? 4 : 2;
+        ctx.stroke();
+      }
+    }
+
+    function drawPlayer(cam) {
+      const p = worldToScreen(state.player.x, state.player.y, cam);
+      const bob = Math.sin(state.player.step) * 2;
+      ctx.fillStyle = "rgba(0,0,0,.28)";
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y + 17, 15, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#263a72";
+      ctx.fillRect(p.x - 10, p.y - 2 + bob, 20, 20);
+      ctx.fillStyle = "#ffd0a0";
+      ctx.fillRect(p.x - 9, p.y - 19 + bob, 18, 17);
+      ctx.fillStyle = "#10162a";
+      ctx.fillRect(p.x - 11, p.y - 23 + bob, 22, 7);
+      ctx.fillRect(p.x - 14, p.y - 17 + bob, 6, 8);
+      ctx.fillRect(p.x + 8, p.y - 17 + bob, 6, 8);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(p.x - 5, p.y - 11 + bob, 3, 3);
+      ctx.fillRect(p.x + 3, p.y - 11 + bob, 3, 3);
+      ctx.fillStyle = "#1a254a";
+      ctx.fillRect(p.x - 11, p.y + 18 + bob, 8, 9);
+      ctx.fillRect(p.x + 3, p.y + 18 + bob, 8, 9);
+      ctx.fillStyle = "#0f1428";
+      ctx.fillRect(p.x - 34, p.y - 42 + bob, 68, 18);
+      ctx.fillStyle = "#65d6ad";
+      ctx.beginPath();
+      ctx.arc(p.x - 28, p.y - 33 + bob, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText("高一新生", p.x - 20, p.y - 29 + bob);
+    }
+
+    function drawMinimap(map) {
+      const w = 148;
+      const h = 96;
+      const x = canvas.width - w - 16;
+      const y = 16;
+      ctx.fillStyle = "rgba(18,23,43,.86)";
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = "#52608f";
+      ctx.strokeRect(x, y, w, h);
+      const sx = w / map.width;
+      const sy = h / map.height;
+      for (const room of map.rooms) {
+        ctx.fillStyle = room.key === "stacks" ? "#8db6dc" : "#d9e8f3";
+        ctx.fillRect(x + room.x * sx, y + room.y * sy, room.w * sx, room.h * sy);
+      }
+      ctx.fillStyle = "#ff7a90";
+      ctx.beginPath();
+      ctx.arc(x + state.player.x * sx, y + state.player.y * sy, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText(state.floor, x + 8, y + 16);
+    }
+
+    function interact() {
+      if (!near) {
+        toast("附近沒有可互動的物件。", "warn");
+        return;
+      }
+      playTone(520, 0.06);
+      ui.welcome.style.display = "none";
+      actions[near.action]();
+    }
+
+    const actions = {
+      locker() {
+        showInfo("置物櫃", `
+          <p>入館前先把書包與飲食放在置物櫃。可以帶入館內的是學生證、需要閱讀的書、筆記用品與必要資料。</p>
+          <p>圖書館禁止攜帶食物、飲料與書包入館，這是為了維護館藏與大家的閱讀環境。</p>
+        `, [
+          ["我已放好書包並帶學生證", () => {
+            state.inventory.bagStored = true;
+            completeTask("locker", "完成置物入館：已放置書包並帶學生證。");
+            setChat("圖書館員：很好，接著到資訊檢索區查一本想看的書。");
+            closeModal();
+          }]
+        ]);
+      },
+      search() {
+        showInfo("資訊檢索區", `
+          <p>在學校首頁進入「圖書館圖書查詢」，可用關鍵字、書名或 ISBN 查詢館藏。查到書後，記下位置，再到二樓書庫找書。</p>
+          <p>今天的任務書名是「星空下的圖書館」，查詢結果顯示：二樓書庫，文學類，索書號 857.7。</p>
+        `, [
+          ["開始查詢並記下索書號", () => {
+            state.inventory.searched = true;
+            ui.searchTerm.textContent = "星空下的圖書館 857.7";
+            completeTask("search", "完成館藏查詢：已記下二樓書庫與索書號。");
+            setChat("系統：查詢成功。請到二樓書庫依分類與索書號找書。");
+            closeModal();
+          }],
+          ["使用手機查詢", () => {
+            state.etiquette = Math.max(0, state.etiquette - 5);
+            addLog("情境事件：館內使用手機查詢，素養分數 -5。");
+            toast("館內不得使用手機，請使用資訊檢索電腦或依教師指示。", "warn");
+            closeModal();
+          }]
+        ]);
+      },
+      pickup() {
+        if (!state.inventory.searched) {
+          showInfo("二樓書庫", `<p>你還不知道索書號。先到一樓資訊檢索區查詢書名與館藏位置，找書會更有效率。</p>`);
+          return;
+        }
+        showInfo("二樓書庫", `
+          <p>你依照查詢結果找到文學類書架，再按照索書號順序找到「星空下的圖書館」。二樓主要是書庫與閱讀區，過期雜誌也會移到這裡供外借。</p>
+        `, [
+          ["取書並帶回一樓櫃台", () => {
+            state.inventory.book = true;
+            completeTask("pickup", "完成前往書庫：已依索書號找到書。");
+            setChat("圖書館員：取書後要回一樓櫃台完成借書程序。");
+            closeModal();
+          }]
+        ]);
+      },
+      counter() {
+        if (!state.inventory.book) {
+          showQuiz("讀者服務櫃台", "借書前需要先完成哪一件事？", [
+            ["到二樓書庫找書或取書", true],
+            ["直接拿學生證到櫃台，不需要找書", false],
+            ["先在期刊區拿當月雜誌外借", false]
+          ], () => {});
+          return;
+        }
+        showQuiz("借書規則確認", "楊梅高中學生一次最多可借幾本書？每本借期多久？", [
+          ["4 本，2 週", true],
+          ["2 本，1 週", false],
+          ["6 本，30 天", false]
+        ], () => {
+          state.inventory.borrowed = true;
+          completeTask("borrow", "完成借書：每人最多 4 本，借期 2 週。");
+          setChat("圖書館員：借期快到時，可於到期日前 1 至 2 日辦理續借。");
+        });
+      },
+      reading() {
+        showQuiz("閱讀區情境", "你在一樓看到當月期刊與漫畫，哪一個判斷正確？", [
+          ["當月期刊與漫畫只限館內閱讀", true],
+          ["當月期刊可以直接借回家", false],
+          ["漫畫可借回家，期刊不行", false]
+        ], () => {
+          completeTask("reading", "完成閱讀規範：當月期刊與漫畫限館內閱讀。");
+          setChat("同學：原來不是所有資料都能外借，使用前要看清楚規則。");
+        });
+      },
+      machine() {
+        showQuiz("事務機器", "要在圖書館影印、列印或掃描，哪一項正確？", [
+          ["自備悠遊卡，餘額至少 10 元；掃描只過卡不扣款", true],
+          ["圖書館會借影印卡，不用準備", false],
+          ["掃描和彩色列印都免費", false]
+        ], () => {
+          completeTask("machine", "完成事務機器任務：黑白每頁 2 元、彩色每頁 6 元，掃描不扣款。");
+          setChat("系統：你已會使用資訊檢索區旁的事務機器。");
+        });
+      },
+      return() {
+        if (!state.inventory.borrowed) {
+          showInfo("還書櫃台", `<p>你還沒有完成借書。請先找到書並在櫃台辦借閱，才能進行還書任務。</p>`);
+          return;
+        }
+        showQuiz("準時還書", "如果圖書逾期歸還，會發生什麼事？", [
+          ["逾期天數會成為暫停借閱權限的天數", true],
+          ["只要口頭說明就不會影響權益", false],
+          ["逾期越久借期越長", false]
+        ], () => {
+          completeTask("return", "完成還書任務：理解逾期會暫停借閱權。");
+          setChat("圖書館員：恭喜完成新生任務，歡迎常來閱讀與探索。");
+        });
+      },
+      meigao() {
+        showInfo("梅高特藏區", `<p>這裡收藏梅岡風、畢業紀念冊、梅高青年等刊物，屬於校史與特色資料，不開放外借，但很適合在館內查閱。</p>`, [
+          ["記錄為探索區域", () => { addLog("探索：梅高特藏區，認識校史資料不可外借。"); closeModal(); }]
+        ]);
+      },
+      discussion() {
+        showInfo("討論室", `<p>討論室適合小組討論與課程活動。使用時要先預約或依教師安排，音量仍需控制，讓討論不干擾其他閱讀者。</p>`, [
+          ["以小組音量討論", () => { addLog("探索：討論室，理解預約與音量管理。"); closeModal(); }]
+        ]);
+      },
+      notice() {
+        showInfo("公布欄", `<p>公布欄會放置活動、書展與閱讀競賽資訊。圖書館也會辦理新購圖書展、主題書展、世界閱讀日公播電影展等活動。</p>`, [
+          ["查看近期活動", () => { addLog("探索：公布欄，知道可留意書展與閱讀活動。"); closeModal(); }]
+        ]);
+      },
+      quietRead() {
+        showInfo("安靜閱讀", `<p>二樓閱讀區靠近書庫，適合找書後就地閱讀。請保持安靜，不喧嘩、不飲食、不佔用座位做非閱讀活動。</p>`, [
+          ["安靜閱讀 5 分鐘", () => { addLog("探索：二樓閱讀區，完成安靜閱讀情境。"); closeModal(); }]
+        ]);
+      },
+      screen2() {
+        showInfo("二樓螢幕", `<p>螢幕可用於展示與教學提醒。圖書館空間可支援學習，但不外借做海報製作、畢業紀念冊編輯等非閱讀活動。</p>`, [
+          ["了解空間用途", () => { addLog("探索：二樓螢幕，理解空間以閱讀與學習為核心。"); closeModal(); }]
+        ]);
+      },
+      stairsUp() {
+        changeFloor("2F");
+      },
+      stairsDown() {
+        changeFloor("1F");
+      }
+    };
+
+    function changeFloor(floor) {
+      state.floor = floor;
+      const spawn = maps[floor].spawn;
+      state.player.x = spawn.x;
+      state.player.y = spawn.y;
+      addLog(`移動：前往圖書館 ${floor}。`);
+      setChat(floor === "2F" ? "系統：二樓是書庫與閱讀區，依索書號慢慢找。" : "系統：回到一樓，可辦理借還書與使用設備。");
+      playTone(380, .08, "triangle");
+      saveState();
+      renderUI();
+    }
+
+    function showInfo(title, html, buttons = [["知道了", closeModal]]) {
+      modal.title.textContent = title;
+      modal.content.innerHTML = html;
+      modal.actions.innerHTML = "";
+      for (const [label, handler] of buttons) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "primary";
+        button.textContent = label;
+        button.addEventListener("click", handler);
+        modal.actions.append(button);
+      }
+      modal.backdrop.style.display = "grid";
+    }
+
+    function showQuiz(title, question, choices, onCorrect) {
+      modal.title.textContent = title;
+      modal.content.innerHTML = `<p>${question}</p><div class="choices"></div>`;
+      modal.actions.innerHTML = "";
+      const box = modal.content.querySelector(".choices");
+      choices.forEach(([label, correct]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.addEventListener("click", () => {
+          state.quiz.push({ title, question, answer: label, correct, at: formatTime(Date.now() - state.startedAt) });
+          if (correct) {
+            toast("判斷正確。", "ok");
+            playTone(820, .1, "triangle");
+            onCorrect();
+            closeModal();
+          } else {
+            state.etiquette = Math.max(0, state.etiquette - 2);
+            toast("再想一下，答案藏在圖書館規則裡。", "warn");
+            addLog(`答題修正：${title} 選項需要再確認，素養分數 -2。`);
+            renderUI();
+          }
+          saveState();
+        });
+        box.append(button);
+      });
+      modal.backdrop.style.display = "grid";
+    }
+
+    function closeModal() {
+      modal.backdrop.style.display = "none";
+      saveState();
+      renderUI();
+    }
+
+    function setChat(text) {
+      ui.chat.textContent = text;
+    }
+
+    function renderUI() {
+      const done = tasks.filter(([id]) => state.completed[id]).length;
+      const percent = Math.round(done / tasks.length * 100);
+      const zones = Object.keys(state.visited).length;
+      ui.floorBadge.textContent = state.floor;
+      ui.timeBadge.textContent = formatTime(Date.now() - state.startedAt);
+      ui.completeBadge.textContent = `${done}/${tasks.length}`;
+      ui.familiarBar.style.width = `${percent}%`;
+      ui.familiarText.textContent = `${percent}%`;
+      ui.etiquetteBar.style.width = `${state.etiquette}%`;
+      ui.etiquetteText.textContent = state.etiquette;
+      ui.zoneBar.style.width = `${Math.min(100, zones / 18 * 100)}%`;
+      ui.zoneText.textContent = String(zones);
+      ui.bottomProgress.style.width = `${percent}%`;
+      const next = tasks.find(([id]) => !state.completed[id]);
+      ui.questLine.textContent = next ? `下一步：${next[2]}` : "任務完成：可開啟教師模式查看學習歷程。";
+      ui.taskList.innerHTML = tasks.map(([id, title, desc]) => `
+        <div class="task ${state.completed[id] ? "done" : ""}">
+          <div class="check">✓</div>
+          <div><h3>${title}</h3><p>${desc}</p></div>
+        </div>
+      `).join("");
+      ui.logList.innerHTML = state.logs.slice(0, 8).map(log => `<div><strong>${log.time}</strong> ${log.message}</div>`).join("") || "<div>尚無紀錄。</div>";
+      saveState();
+    }
+
+    function openTeacherMode() {
+      const done = tasks.filter(([id]) => state.completed[id]).length;
+      const zones = Object.keys(state.visited).length;
+      const correct = state.quiz.filter(q => q.correct).length;
+      const attempts = state.quiz.length;
+      modal.title.textContent = "教師模式：學習歷程";
+      modal.content.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat"><span>主線完成</span><b>${done}/${tasks.length}</b></div>
+          <div class="stat"><span>探索區域</span><b>${zones}</b></div>
+          <div class="stat"><span>答題正確</span><b>${correct}/${attempts || 0}</b></div>
+        </div>
+        <p><strong>熟悉程度：</strong>${Math.round(done / tasks.length * 100)}%。<br>
+        <strong>圖書館素養：</strong>${state.etiquette} 分。<br>
+        <strong>體驗時間：</strong>${formatTime(Date.now() - state.startedAt)}。</p>
+        <p><strong>已完成任務：</strong>${tasks.filter(([id]) => state.completed[id]).map(([, t]) => t).join("、") || "尚未完成主線任務"}。</p>
+        <p><strong>最近紀錄：</strong></p>
+        <div class="log-list">${state.logs.slice(0, 14).map(log => `<div>${log.time} ${log.message}</div>`).join("") || "<div>尚無紀錄。</div>"}</div>
+        <div class="teacher-grid" style="margin-top: 16px;">
+          <div><p><strong>1F 原始配置圖</strong></p><img src="圖書館空間配置圖1F.PNG" alt="圖書館一樓空間配置圖"></div>
+          <div><p><strong>2F 原始配置圖</strong></p><img src="圖書館空間配置圖2F.PNG" alt="圖書館二樓空間配置圖"></div>
+        </div>
+      `;
+      modal.actions.innerHTML = "";
+      const exportBtn = document.createElement("button");
+      exportBtn.className = "primary";
+      exportBtn.textContent = "匯出 JSON";
+      exportBtn.addEventListener("click", exportProgress);
+      const csvBtn = document.createElement("button");
+      csvBtn.textContent = "匯出 CSV";
+      csvBtn.addEventListener("click", exportCSV);
+      const resetBtn = document.createElement("button");
+      resetBtn.textContent = "重置紀錄";
+      resetBtn.addEventListener("click", () => {
+        localStorage.removeItem("ymhsLibraryGame");
+        state = structuredClone(initialState);
+        closeModal();
+        renderUI();
+        toast("已重置本機學習紀錄。", "gold");
+      });
+      modal.actions.append(exportBtn, csvBtn, resetBtn);
+      modal.backdrop.style.display = "grid";
+    }
+
+    function downloadFile(name, type, text) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportProgress() {
+      const data = {
+        exportedAt: new Date().toISOString(),
+        elapsed: formatTime(Date.now() - state.startedAt),
+        completed: state.completed,
+        visited: state.visited,
+        etiquette: state.etiquette,
+        quiz: state.quiz,
+        logs: state.logs
+      };
+      downloadFile("ymhs-library-progress.json", "application/json", JSON.stringify(data, null, 2));
+    }
+
+    function exportCSV() {
+      const rows = [["time", "message"], ...state.logs.map(log => [log.time, log.message])];
+      const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+      downloadFile("ymhs-library-progress.csv", "text/csv;charset=utf-8", csv);
+    }
+
+    window.addEventListener("keydown", (event) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
+      keys.add(event.code);
+      if (event.code === "KeyE" || event.code === "Space") interact();
+      if (event.code === "KeyT") openTeacherMode();
+      if (event.code === "Escape") closeModal();
+    });
+
+    window.addEventListener("keyup", event => keys.delete(event.code));
+    document.getElementById("interactBtn").addEventListener("click", interact);
+    document.getElementById("teacherBtn").addEventListener("click", openTeacherMode);
+    document.getElementById("soundBtn").addEventListener("click", () => {
+      state.sound = !state.sound;
+      document.getElementById("soundBtn").textContent = state.sound ? "音效 開" : "音效 關";
+      saveState();
+    });
+    modal.close.addEventListener("click", closeModal);
+    modal.backdrop.addEventListener("click", event => {
+      if (event.target === modal.backdrop) closeModal();
+    });
+    document.querySelectorAll("[data-touch]").forEach(button => {
+      const action = button.dataset.touch;
+      const keyMap = { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" };
+      if (action === "interact") {
+        button.addEventListener("click", interact);
+      } else {
+        button.addEventListener("pointerdown", () => keys.add(keyMap[action]));
+        button.addEventListener("pointerup", () => keys.delete(keyMap[action]));
+        button.addEventListener("pointercancel", () => keys.delete(keyMap[action]));
+        button.addEventListener("pointerleave", () => keys.delete(keyMap[action]));
+      }
+    });
+
+    function loop(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      update(dt);
+      if (Math.floor(now / 1000) !== Math.floor((now - dt * 1000) / 1000)) renderUI();
+      requestAnimationFrame(loop);
+    }
+
+    renderUI();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
